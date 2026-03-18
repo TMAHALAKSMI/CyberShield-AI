@@ -15,7 +15,7 @@ const themes: Record<ThemeMode, Theme> = {
 // ── API — all calls have AbortController + 10 s timeout ──────────────────────
 const API = process.env.NEXT_PUBLIC_API_URL || "https://cybershield-ai-tnmu.onrender.com";
 
-function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 10000): Promise<Response> {
+function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 60000): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
   return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(timer));
