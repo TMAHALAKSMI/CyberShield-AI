@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>🐟 Phishing Detection</title>
+<style>body{font-family:Arial;max-width:600px;margin:50px auto;padding:20px;}
+input,button{width:100%;padding:12px;margin:8px 0;border-radius:5px;box-sizing:border-box;}
+button{background:#4CAF50;color:white;border:none;cursor:pointer;font-size:16px;}
+#result{padding:15px;margin:20px 0;border-left:4px solid;border-radius:5px;background:#f9f9f9;}
+.phish{border-color:#f44336;background:#ffebee;color:#c62828;}
+.safe{border-color:#4caf50;background:#e8f5e8;color:#2e7d32;}
+</style></head>
+<body>
+<h1>🔍 Phishing Detection System</h1>
+<div>
+<input id="email" placeholder="test@test.com" type="email"><br>
+<input id="pass" placeholder="123456" type="password"><br>
+<button onclick="signup()">📝 Sign Up</button>
+<button onclick="login()">🔑 Login</button>
+</div>
+<input id="url" placeholder="https://login-secure.com"><br>
+<button onclick="predict()">🚨 SCAN URL</button>
+<div id="result"></div>
+
+<script>
+async function callAPI(endpoint,data){
+    const res=await fetch(`http://localhost:8000${endpoint}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(data)
+    });
+    return await res.json();
+}
+
+signup=async()=>{document.getElementById('result').innerHTML=JSON.stringify(await callAPI('/signup',{email:document.getElementById('email').value,password:document.getElementById('pass').value}))}
+login=signup
+predict=async()=>{
+    const result=await callAPI('/predict',{url:document.getElementById('url').value});
+    const el=document.getElementById('result');
+    el.className=result.result=='PHISHING'?'phish':'safe';
+    el.innerHTML=`🔍 ${result.url}\n🎯 ${result.result}`;
+}
+</script>
+</body>
+</html>

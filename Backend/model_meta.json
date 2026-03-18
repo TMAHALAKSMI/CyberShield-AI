@@ -1,0 +1,13 @@
+{
+  "name": "XGBClassifier",
+  "version": "2.0",
+  "status": "ready",
+  "trained_at": "2026-03-17T13:49:31.513260",
+  "total_params": 150,
+  "n_features": 30,
+  "classes": [
+    "legitimate",
+    "benign",
+    "phish"
+  ]
+}
