@@ -31,13 +31,13 @@ async function apiScan(url: string, username: string): Promise<Prediction> {
 }
 
 async function apiGetPredictions(username: string): Promise<ScanEntry[]> {
-  const res = await fetchWithTimeout(`${API}/api/predictions/${encodeURIComponent(username)}?limit=50`, {}, 8000);
+  const res = await fetchWithTimeout(`${API}/history/${encodeURIComponent(username)}?limit=50`, {}, 8000);
   if (!res.ok) return [];
   return res.json();
 }
 
 async function apiChat(message: string, history: { role: string; content: string }[]): Promise<string> {
-  const res = await fetchWithTimeout(`${API}/api/chat`, {
+  const res = await fetchWithTimeout(`${API}/chat`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, history }),
   }, 12000);
@@ -46,7 +46,7 @@ async function apiChat(message: string, history: { role: string; content: string
 }
 
 async function apiLogin(username: string, password: string): Promise<{ success: boolean; username: string; email?: string }> {
-  const res = await fetchWithTimeout(`${API}/api/login`, {
+  const res = await fetchWithTimeout(`${API}/login`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   }, 8000);
@@ -55,7 +55,7 @@ async function apiLogin(username: string, password: string): Promise<{ success: 
 }
 
 async function apiSignup(username: string, password: string, email: string): Promise<{ success: boolean; username: string }> {
-  const res = await fetchWithTimeout(`${API}/api/signup`, {
+  const res = await fetchWithTimeout(`${API}/signup`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password, email }),
   }, 8000);
@@ -575,3 +575,4 @@ export default function App() {
     </div>
   );
 }
+
