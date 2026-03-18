@@ -6,8 +6,9 @@ Run: uvicorn main:app --reload
 import sqlite3, os, pickle, json, hashlib
 import joblib
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -29,17 +30,49 @@ META   = {}
 # ── FastAPI app ───────────────────────────────────────────────────────────────
 app = FastAPI(title="Phishing Detection API", version="3.0.0")
 
+# ── CORS Middleware ───────────────────────────────────────────────────────────
+# FIX: List every origin that should be allowed. Add your Vercel URL here.
+# If you're still getting CORS errors, temporarily set allow_origins=["*"]
+# to confirm CORS is the issue, then lock it down again.
+
+ALLOWED_ORIGINS = [
+    "https://frontend-tau-ten-85.vercel.app",   # ✅ Your production Vercel URL
+    "https://*.vercel.app",                      # ✅ All Vercel preview deployments
+    "http://localhost:5173",                     # ✅ Vite dev server
+    "http://localhost:3000",                     # ✅ CRA dev server
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://cybershield-ai.vercel.app",
-        "https://*.vercel.app",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,   # Cache preflight response for 10 minutes
 )
+
+
+# ── Global Exception Handler (returns JSON, never HTML) ───────────────────────
+# FIX: This is what caused your "Unexpected token '<'" error.
+# Without this, unhandled errors return an HTML page instead of JSON,
+# and your frontend crashes trying to parse the '<' of '<!DOCTYPE html>'.
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}"},
+    )
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": f"Route not found: {request.url.path}"},
+    )
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -249,7 +282,7 @@ def auth_logout():
     return {"message": "Logged out successfully"}
 
 
-# ── /history (all scans for logged-in user via token=username) ────────────────
+# ── /history (all scans) ──────────────────────────────────────────────────────
 @app.get("/history")
 def get_history_all(limit: int = 100):
     conn = get_conn()
@@ -314,7 +347,7 @@ def retrain():
     try:
         from train_model import train_model as _train
         _train()
-        load_model_files()   # reload into memory after retraining
+        load_model_files()
         return {"message": "Model retrained successfully! Reload the dashboard to see updated metrics."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Retrain failed: {e}")
@@ -391,7 +424,7 @@ def model_info():
     }
 
 
-# ── health check ──────────────────────────────────────────────────────────────
+# ── Health check ──────────────────────────────────────────────────────────────
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Phishing Detection API running"}
